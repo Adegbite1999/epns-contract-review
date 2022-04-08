@@ -1,7 +1,13 @@
-#  EPNS STAKING CONTRACT REVIEW (https://github.com/Adegbite1999/epns-smart-contracts-genesis/blob/master/contracts/staking/Staking.sol)
+ # EPNS STAKING CONTRACT REVIEW 
 
 # Solidity version `^0.6.11`;
 
+
+Import  openzepellin ERC20 interface standard (https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/IERC20.sol)
+
+Import openzepellin safeMath.sol which help guide against overflow and underflow (https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/utils/math/SafeMath.sol)
+
+Import openzepellin ReentrancyGuard.sol which helps guide against reentrancy attack
 
 # STATE VARIABLES
 
@@ -426,6 +432,8 @@ function manualEpochInit(address[] memory tokens, uint128 epochId) public {
 
     
 # Returns the id of the current epoch derived from block.timestamp
+* A view function which checks if  `block.timestamp` is less than `epoch1Start` and returns zero
+* if the condition above fails, it returns current inddex of the epoch
     
          function getCurrentEpoch() public view returns (uint128) {
         if (block.timestamp < epoch1Start) {
@@ -445,9 +453,6 @@ function manualEpochInit(address[] memory tokens, uint128 epochId) public {
 ```
 
 function getEpochPoolSize(address tokenAddress, uint128 epochId) public view returns (uint256) {
-        // Premises:
-        // 1. it's impossible to have gaps of uninitialized epochs
-        // - any deposit or withdraw initialize the current epoch which requires the previous one to be initialized
         if (epochIsInitialized(tokenAddress, epochId)) {
             return poolSize[tokenAddress][epochId].size;
         }
@@ -464,6 +469,11 @@ function getEpochPoolSize(address tokenAddress, uint128 epochId) public view ret
 ```
 
 # Returns multiplier
+*  `  uint128 currentEpoch = getCurrentEpoch();`: gets current epoch
+* Calculate the CurrentEpochEnd by adding `epoch1Start` + `currentEpoch` * `epochDuration`
+* Calculate timeLeft by substrating `currentEpoch` from `block.timestamp`
+* Calculate multiplier via ` uint128 currentEpoch = getCurrentEpoch();` 
+
 ```  
     function currentEpochMultiplier() public view returns (uint128) {
         uint128 currentEpoch = getCurrentEpoch();
@@ -488,6 +498,7 @@ function getEpochPoolSize(address tokenAddress, uint128 epochId) public view ret
 
 
 # Check the status of an Epoch
+* epochIsInitialized accepts three paramter `token `
 
     function epochIsInitialized(address token, uint128 epochId) public view returns (bool) {
         return poolSize[token][epochId].set;
@@ -510,7 +521,7 @@ function getEpochPoolSize(address tokenAddress, uint128 epochId) public view ret
 
 # Events
  ```
- event Deposit(address indexed user, address indexed tokenAddress, uint256 amount);
+event Deposit(address indexed user, address indexed tokenAddress, uint256 amount);
 event Withdraw(address indexed user, address indexed tokenAddress, uint256 amount);
 event ManualEpochInit(address indexed caller, uint128 indexed epochId, address[] tokens);
 event EmergencyWithdraw(address indexed user, address indexed tokenAddress, uint256 amount);
